@@ -14,7 +14,7 @@ Uses `nanoAOD` skims produced by https://github.com/singh-ramanpreet/VVjjSemilep
   git clone https://github.com/singh-ramanpreet/VVjjSemileptonic-Selection.git VVjjSemileptonic/Selection
   scram b
   cd VVjjSemileptonic/Selection
-  script/get_fake_rates.sh
+  scripts/get_fake_rates.sh
 ```
 
 ## Run interactively: 
