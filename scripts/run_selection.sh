@@ -44,7 +44,7 @@ echo "====> copying output root file to eos ..."
 xrdfs root://cmseos.fnal.gov/ mkdir -p ${eos_output_dir}
 xrdcp -f ${output} root://cmseos.fnal.gov/${eos_output_dir}/
 
-cd ${_CONDOR_SCRATCH_DIR}
-rm -rf *
+#cd ${_CONDOR_SCRATCH_DIR}
+#rm -rf *
 
 exit
