@@ -7,12 +7,14 @@ Uses `nanoAOD` skims produced by https://github.com/singh-ramanpreet/VVjjSemilep
 ## Setup:
 
 ```bash
+  source /cvmfs/cms.cern.ch/cmsset_default.sh
   cmsrel CMSSW_10_6_22
   cd CMSSW_10_6_22/src
+  cmsenv
   git clone https://github.com/singh-ramanpreet/VVjjSemileptonic-Selection.git VVjjSemileptonic/Selection
   scram b
   cd VVjjSemileptonic/Selection
-  get_fake_rates.sh
+  scripts/get_fake_rates.sh
 ```
 
 ## Run interactively: 
