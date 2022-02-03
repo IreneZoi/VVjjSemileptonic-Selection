@@ -47,4 +47,5 @@ xrdcp -f ${output} root://cmseos.fnal.gov/${eos_output_dir}/
 #cd ${_CONDOR_SCRATCH_DIR}
 #rm -rf *
 
-exit
+#exit
+echo "done!"

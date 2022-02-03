@@ -32,4 +32,4 @@ do
     /dev/null
 done
 
-exit
+echo "done!"
