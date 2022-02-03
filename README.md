@@ -69,6 +69,11 @@ submit_selection.sh ../inputs/2016 2016 /eos/uscms/store/user/rsingh/test/
 submit_selection.sh ../inputs/2017 2017 /eos/uscms/store/user/rsingh/test/
 submit_selection.sh ../inputs/2018 2018 /eos/uscms/store/user/rsingh/test/
 ```
+Example:
+Before running put NAME.txt files in input_txt with the list of files to be produced. The NAME will be used in the outputs.
+```
+source scripts/submit_selection.sh input_txt/ 2016 /eos/uscms/store/user/izoi/VBS_selections/
+```
 
 ### 3. Combine `Data` and remove duplicate events
 
