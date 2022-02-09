@@ -33,8 +33,10 @@
 #include "../interface/Utils.hh"
 #include "../interface/METzCalculator.h"
 
-int main (int ac, char** av) {
+bool DEBUG = true;
 
+int main (int ac, char** av) {
+  std::cout<< "Beginning of Selections code" << std::endl;
   std::string inputFile = av[1];
   std::string outputFile = av[2];
   int isMC = atoi(av[3]);
@@ -239,6 +241,7 @@ int main (int ac, char** av) {
 
       if (isMC==1) {
         WVJJTree->genWeight=*nr.Generator_weight;
+        if(DEBUG) std::cout<<" Got Gen weights for MC" << std::endl;
       }
 
       // filtering out particular event for sync
@@ -246,7 +249,7 @@ int main (int ac, char** av) {
       //  continue;
       //}
       //std::cout << *nr.run << " " << *nr.event << std::endl;
-
+      if(DEBUG) std::cout<<" Triggers!! "<< std::endl;
       WVJJTree->trigger_1Mu = ((has_HLT_IsoMu22 ? *nr.HLT_IsoMu22 : 0) ||
                                (has_HLT_IsoTkMu22 ? *nr.HLT_IsoTkMu22 : 0) ||
                                (has_HLT_IsoMu24 ? *nr.HLT_IsoMu24 : 0) ||
@@ -279,13 +282,14 @@ int main (int ac, char** av) {
                                (has_HLT_DoubleEle33_CaloIdL_MW ? *nr.HLT_DoubleEle33_CaloIdL_MW : 0) ||
                                (has_HLT_DoubleEle25_CaloIdL_MW ? *nr.HLT_DoubleEle25_CaloIdL_MW : 0) ||
                                (has_HLT_DoubleEle27_CaloIdL_MW ? *nr.HLT_DoubleEle27_CaloIdL_MW : 0));
-
-      //std::cout << "passed trigger: ";
-      //if (WVJJTree->trigger_1Mu) std::cout << "1 muon ";
-      //if (WVJJTree->trigger_2Mu) std::cout << "2 muon ";
-      //if (WVJJTree->trigger_1El) std::cout << "1 ele ";
-      //if (WVJJTree->trigger_2El) std::cout << "2 ele ";
-      //std::cout << std::endl;
+      if(DEBUG){
+        std::cout << "passed trigger: \n";
+        if (WVJJTree->trigger_1Mu) std::cout << "1 muon \n";
+        if (WVJJTree->trigger_2Mu) std::cout << "2 muon \n";
+        if (WVJJTree->trigger_1El) std::cout << "1 ele \n";
+        if (WVJJTree->trigger_2El) std::cout << "2 ele \n";
+        std::cout << "all triggers checked " <<std::endl;
+      }
 
       if ( ! ( WVJJTree->trigger_1Mu || WVJJTree->trigger_2Mu || WVJJTree->trigger_1El || WVJJTree->trigger_2El ) ) continue;
       totalCutFlow->Fill("Trigger",1);
@@ -309,12 +313,13 @@ int main (int ac, char** av) {
       WVJJTree->puWeight_Down = scaleFactor.GetPUWeight(WVJJTree->nPU_mean, -1);
 
       // LEPTON SELECTION
-
+      if(DEBUG) std::cout << "Lepton selections " << std::endl;
       int nTightEle = 0;
       int nTightMu = 0;
       int nVetoEle = 0;
       int nVetoMu = 0;
       
+      if(DEBUG) std::cout << "Running on " << *nr.nMuon << " muons " <<std::endl;
       for (uint j=0; j < *nr.nMuon; j++) {
 
         //using conservative uncertainty value of 3%
@@ -372,6 +377,7 @@ int main (int ac, char** av) {
         }
       }
 
+      if(DEBUG) std::cout << "Running on " << *nr.nElectron << " elctrons " <<std::endl;
       for ( uint j=0; j < *nr.nElectron; j++ ) {
 
         //don't try to select electrons unless we don't already have muons
@@ -473,7 +479,9 @@ int main (int ac, char** av) {
       }
 
       //check conditions
+      if(DEBUG) std::cout << " checking conditions " <<std::endl;
       bool passLepSel = true;
+      
       // only one tight and no vetoed lep -> WV
       if ((nTightMu + nTightEle) == 1 && (nVetoEle + nVetoMu) > (nTightMu + nTightEle)) passLepSel = false;
       // only two tight and no vetoed lep -> ZV
@@ -481,7 +489,7 @@ int main (int ac, char** av) {
 
       if (passLepSel==false && (nTightMu+nTightEle)==0 && ((nVetoEle>0) ^ (nVetoMu>0))) {
         if (nVetoEle>0) {
-
+          if(DEBUG) std::cout << " electron stuff" <<std::endl;
           for (uint j=0; j < *nr.nElectron; j++) {
             if ( abs(nr.Electron_eta[j]) > EL_ETA_CUT ) continue;
             if ( 1.03*nr.Electron_pt[j] < EL_PT_CUT ) continue;
@@ -508,7 +516,7 @@ int main (int ac, char** av) {
         }
 
         if (nVetoMu>0) {
-
+          if(DEBUG) std::cout << " muon stuff" <<std::endl; 
           for (uint j=0; j < *nr.nMuon; j++) {
             if ( abs(nr.Muon_eta[j]) > MU_ETA_CUT ) continue;
             if (nr.Muon_pfRelIso04_all[j]>0.40) continue;
@@ -534,7 +542,7 @@ int main (int ac, char** av) {
           WVJJTree->lepFakeRate = scaleFactor.GetLeptonFakeWeights(WVJJTree->lep1_pt, WVJJTree->lep1_eta, 13);
         }
       }
-
+      if(DEBUG) std::cout << " going to fill hists" <<std::endl; 
       if (passLepSel) totalCutFlow->Fill("Lepton Selection",1);
       if (passLepSel && WVJJTree->lep2_pt > 0) zvCutFlow->Fill("Lepton Selection",1);
       if (passLepSel && WVJJTree->lep2_pt > 0) zjjCutFlow->Fill("Lepton Selection",1);
@@ -544,6 +552,7 @@ int main (int ac, char** av) {
       if (!passLepSel && !WVJJTree->isAntiIso) continue;
 
       //muon scale variations
+      if(DEBUG) std::cout << " muon scale variations" <<std::endl; 
       if (WVJJTree->lep1_m == MUON_MASS) {
         //https://twiki.cern.ch/twiki/bin/view/CMS/MuonReferenceScaleResolRun2
         if (WVJJTree->lep1_eta<-2.1) {
@@ -592,6 +601,7 @@ int main (int ac, char** av) {
       }
 
       //electron scale variations
+      if(DEBUG) std::cout << " electron scale variations" <<std::endl;      
       if (WVJJTree->lep1_m == ELE_MASS) {
         WVJJTree->lep1_pt_scaleUp = 1.01 * WVJJTree->lep1_pt;
         WVJJTree->lep1_pt_scaleDown = 0.99 * WVJJTree->lep1_pt;
@@ -618,7 +628,7 @@ int main (int ac, char** av) {
         WVJJTree->dilep_phi = dilep.Phi();
 
         //dilepton scale variations
-
+        if(DEBUG) std::cout << " dilepton scale variations" <<std::endl;
         lep1.SetPtEtaPhiM( WVJJTree->lep1_pt_scaleUp, WVJJTree->lep1_eta, WVJJTree->lep1_phi, WVJJTree->lep1_m);
         lep2.SetPtEtaPhiM( WVJJTree->lep2_pt_scaleUp, WVJJTree->lep2_eta, WVJJTree->lep2_phi, WVJJTree->lep2_m);
 
@@ -636,6 +646,7 @@ int main (int ac, char** av) {
       }
       
       //lepton ID/iso/trigger efficiencies
+      if(DEBUG) std::cout << " efficiencies" <<std::endl;
       WVJJTree->lep1_idEffWeight = scaleFactor.GetLeptonWeights(WVJJTree->lep1_pt, WVJJTree->lep1_eta,
                                                                 WVJJTree->lep1_m == ELE_MASS ? 11 : 13);
       WVJJTree->lep1_trigEffWeight = 1.0;
@@ -650,21 +661,27 @@ int main (int ac, char** av) {
       if (WVJJTree->lep1_pt < 0) continue;
 
       // MET
+      if(DEBUG) std::cout << " MET @line" <<__LINE__<< std::endl;      
       if (passLepSel && *nr.MET_pt > 0) totalCutFlow->Fill("MET > 0",1);
       if (passLepSel && *nr.MET_pt > 0 && WVJJTree->lep2_pt > 0) zvCutFlow->Fill("MET > 0",1);
       if (passLepSel && *nr.MET_pt > 0 && WVJJTree->lep2_pt > 0) zjjCutFlow->Fill("MET > 0",1);
       if (passLepSel && *nr.MET_pt > 0 && WVJJTree->lep2_pt < 0) wvCutFlow->Fill("MET > 0",1);
       if (passLepSel && *nr.MET_pt > 0 && WVJJTree->lep2_pt < 0) wjjCutFlow->Fill("MET > 0",1);
+      if(DEBUG) std::cout << "number of met pt "<< *nr.MET_pt <<std::endl;
       if (*nr.MET_pt < 0) continue;
+      if(DEBUG && isMC) std::cout << " *nr.MET_T1Smear_pt "<<*nr.MET_T1Smear_pt << std::endl;
       WVJJTree->MET = isMC ? *nr.MET_T1Smear_pt : *nr.MET_T1_pt;
+      if(DEBUG) std::cout << " WVJJTree->MET "<<WVJJTree->MET << std::endl;
       WVJJTree->MET_phi = isMC ? *nr.MET_T1Smear_phi : *nr.MET_T1_phi;
+      if(DEBUG && isMC) std::cout << " *nr.MET_T1Smear_phi "<<*nr.MET_T1Smear_phi << std::endl;
       if (era==2017) {
         WVJJTree->MET_2017 = *nr.METFixEE2017_pt;
       }
-
+      if(DEBUG) std::cout << "PUPPI met pt "<< *nr.PuppiMET_pt <<std::endl;  
       WVJJTree->PuppiMET = *nr.PuppiMET_pt;
+      if(DEBUG) std::cout << "PUPPI met phi "<< *nr.PuppiMET_phi <<std::endl;  
       WVJJTree->PuppiMET_phi = *nr.PuppiMET_phi;
-
+      if(DEBUG) std::cout << " start MET MC @line"<<__LINE__<<std::endl;
       if (isMC) {
         WVJJTree->MET_jesFlavorQCDUp = *nr.MET_T1Smear_pt_jesFlavorQCDUp;
         WVJJTree->MET_jesFlavorQCDDown = *nr.MET_T1Smear_pt_jesFlavorQCDDown;
@@ -693,6 +710,7 @@ int main (int ac, char** av) {
         WVJJTree->MET_phi_jesAbsoluteDown = *nr.MET_T1Smear_phi_jesAbsoluteDown;
 
         if (era==2016) {
+          if(DEBUG)std::cout << "handling of 2016 MC " <<__LINE__<< std::endl;
           WVJJTree->MET_jesBBEC1_YearUp = *nr.MET_T1Smear_pt_jesBBEC1_2016Up;
           WVJJTree->MET_jesBBEC1_YearDown = *nr.MET_T1Smear_pt_jesBBEC1_2016Down;
           WVJJTree->MET_jesEC2_YearUp = *nr.MET_T1Smear_pt_jesEC2_2016Up;
@@ -768,7 +786,7 @@ int main (int ac, char** av) {
         WVJJTree->MET_phi_jesTotalUp = *nr.MET_T1Smear_phi_jesTotalUp;
         WVJJTree->MET_phi_jesTotalDown = *nr.MET_T1Smear_phi_jesTotalDown;
       }
-
+      if(DEBUG) std::cout << "  end of MC handling "<<__LINE__<<std::endl;
 
       if (WVJJTree->lep2_pt<0) {
         TLorentzVector lep1(0,0,0,0);
@@ -941,10 +959,11 @@ int main (int ac, char** av) {
       }
 
       // AK8
+      if(DEBUG) std::cout << " AK8" <<__LINE__<<std::endl;      
       float dmV = 0.0;
       int nGoodFatJet = 0;
       int fj_idx = -1;
-
+      if(DEBUG) std::cout << " running on "<<*nr.nFatJet << "fatjets "  <<std::endl;
       for (uint j=0; j<*nr.nFatJet; j++) {
 
         if ( fabs(nr.FatJet_eta[j]) > AK8_MAX_ETA ) continue;
@@ -963,6 +982,7 @@ int main (int ac, char** av) {
 
         bool isClean=true;
         //lepton cleaning
+        if(DEBUG) std::cout << " lepton cleaning  " <<std::endl;
         for ( std::size_t k=0; k<tightEle.size(); k++) {
           if (deltaR(tightEle.at(k).Eta(), tightEle.at(k).Phi(),
                      nr.FatJet_eta[j], nr.FatJet_phi[j]) < AK8_LEP_DR_CUT)
@@ -1057,6 +1077,7 @@ int main (int ac, char** av) {
       for (uint j=0; j<*nr.nJet; j++) {
 
         //jet energy scale variations
+        if(DEBUG) std::cout<< "jet energy scale variations" <<std::endl;
         if ( isMC && ( nr.Jet_pt_nom[j] < AK4_PT_CUT && nr.Jet_pt_jesTotalUp[j] < AK4_PT_CUT &&
                       nr.Jet_pt_jesTotalDown[j] < AK4_PT_CUT ) ) continue;
         else if ( !isMC && nr.Jet_pt_nom[j] < AK4_PT_CUT ) continue;
@@ -1076,6 +1097,7 @@ int main (int ac, char** av) {
         bool isClean=true;
 
         // object cleaning
+        if(DEBUG) std::cout<< "object cleaning" <<std::endl;        
         if (nGoodFatJet > 0) {
           if (deltaR(WVJJTree->bos_PuppiAK8_eta, WVJJTree->bos_PuppiAK8_phi,
                      nr.Jet_eta[j], nr.Jet_phi[j]) < AK4_AK8_DR_CUT) {
@@ -1234,6 +1256,7 @@ int main (int ac, char** av) {
       if (passLepSel && WVJJTree->lep2_pt < 0 && nGoodDijet > 0) wjjCutFlow->Fill("VBS Pair",1);
 
       // no good FatJet, find pair of jets near to V mass
+      if(DEBUG) std::cout << "no good FatJet, find pair of jets near to V mass" <<std::endl;
       if (nGoodFatJet != 1) {
 
         dmV = 3000.0;
@@ -1270,6 +1293,7 @@ int main (int ac, char** av) {
       }
 
       //check we have a hadronic boson candidate
+      if(DEBUG) std::cout << "check we have a hadronic boson candidate" <<std::endl;
       if ( nGoodFatJet == 0 && nGoodDijet == 0 ) continue;
       if (passLepSel) totalCutFlow->Fill("Hadronic V",1);
       if (passLepSel && WVJJTree->lep2_pt > 0 && nGoodFatJet > 0) zvCutFlow->Fill("Hadronic V",1);
@@ -1518,6 +1542,7 @@ int main (int ac, char** av) {
           WVJJTree->bos_j2_AK4_m_jesTotalDown = nr.Jet_mass_jesTotalDown[sel2];
 
           // resolved boson candidate JES variation
+          if(DEBUG) std::cout << "resolved boson JES" <<std::endl;            
           TLorentzVector tempBos1(0,0,0,0);
           TLorentzVector tempBos2(0,0,0,0);
 
@@ -2146,6 +2171,7 @@ int main (int ac, char** av) {
       }
 
       // bosHad JES
+      if(DEBUG) std::cout << "bosHad JES" <<std::endl;        
       TLorentzVector bosHad(0, 0, 0, 0), bosHad_jesFlavorQCDUp(0, 0, 0, 0), bosHad_jesFlavorQCDDown(0, 0, 0, 0), bosHad_jesRelativeBalUp(0, 0, 0, 0),
           bosHad_jesRelativeBalDown(0, 0, 0, 0), bosHad_jesHFUp(0, 0, 0, 0), bosHad_jesHFDown(0, 0, 0, 0), bosHad_jesBBEC1Up(0, 0, 0, 0),
           bosHad_jesBBEC1Down(0, 0, 0, 0), bosHad_jesEC2Up(0, 0, 0, 0), bosHad_jesEC2Down(0, 0, 0, 0), bosHad_jesAbsoluteUp(0, 0, 0, 0),
@@ -2167,6 +2193,7 @@ int main (int ac, char** av) {
       TLorentzVector bosLep_scaleUp(0, 0, 0, 0), bosLep_scaleDown(0, 0, 0, 0);
 
       //boosted event
+      if(DEBUG) std::cout << "boosted event" <<std::endl;
       if (WVJJTree->bos_PuppiAK8_m_sd0_corr > 0) {
         bosHad.SetPtEtaPhiM(WVJJTree->bos_PuppiAK8_pt, WVJJTree->bos_PuppiAK8_eta,
                             WVJJTree->bos_PuppiAK8_phi, WVJJTree->bos_PuppiAK8_m_sd0_corr);
@@ -2235,6 +2262,7 @@ int main (int ac, char** av) {
       }
 
       //resolved event
+      if(DEBUG) std::cout << "resolved event" <<std::endl;
       else if (WVJJTree->bos_AK4AK4_m > 0) {
         bosHad.SetPtEtaPhiM(WVJJTree->bos_AK4AK4_pt, WVJJTree->bos_AK4AK4_eta,
                             WVJJTree->bos_AK4AK4_phi, WVJJTree->bos_AK4AK4_m);
@@ -2306,6 +2334,7 @@ int main (int ac, char** av) {
       // 2 lepton event: only lepton pt scale variation
 
       // 1 lepton
+      if(DEBUG) std::cout << "1 lepton" <<std::endl;
       if (WVJJTree->lep2_pt < 0) {
         TLorentzVector lep(0,0,0,0), met(0,0,0,0);
         lep.SetPtEtaPhiM(WVJJTree->lep1_pt, WVJJTree->lep1_eta, WVJJTree->lep1_phi, WVJJTree->lep1_m);
@@ -2397,6 +2426,7 @@ int main (int ac, char** av) {
         }
       }
       // 2 lepton
+      if(DEBUG) std::cout << "2 lepton" <<std::endl;
       else if (WVJJTree->lep2_pt > 0) {
         bosLep.SetPtEtaPhiM(WVJJTree->dilep_pt, WVJJTree->dilep_eta, WVJJTree->dilep_phi, WVJJTree->dilep_m);
 
@@ -2574,14 +2604,16 @@ int main (int ac, char** av) {
           //LHE pdf variation weights (w_var / w_nominal) for LHA IDs 91400 - 91432
           WVJJTree->pdfWeight[j]=nr.LHEPdfWeight[j];
         }
-
+        if(DEBUG) std::cout << "did I really get here " << std::endl;
         // tZq events in ZV signal sample
         if ( (nr.GenPart_genPartIdxMother[2] == 0 && abs(nr.GenPart_pdgId[2]) == 6)
             || (nr.GenPart_genPartIdxMother[3] == 0 && abs(nr.GenPart_pdgId[3]) == 6)
            ) {
+          if(DEBUG) std::cout << "and here " << std::endl;   
           WVJJTree->is_tZq = true;
         }
-        //std::cout<<abs(nr.GenPart_pdgId[2])<< " " << WVJJTree->is_tZq << std::endl;
+        if(DEBUG) std::cout << "not here " << std::endl;
+        if(DEBUG) std::cout<<abs(nr.GenPart_pdgId[2])<< " " << WVJJTree->is_tZq << std::endl;
       }
 
       if (isMC==1 && *nr.nLHEReweightingWeight!=0) {
@@ -2609,6 +2641,7 @@ int main (int ac, char** av) {
       }
 
       ot->Fill();
+    if (i%100000==0) std::cout <<"done with file " << lineCount << ": event " << i << std::endl;  
     }
 
     delete t;
